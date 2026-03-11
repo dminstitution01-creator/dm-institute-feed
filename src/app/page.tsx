@@ -59,10 +59,10 @@ export default function Home() {
       {/* 헤더 */}
       <header className="sticky top-0 z-10 bg-white/80 backdrop-blur-md border-b border-neutral-200">
         <div className="max-w-[600px] mx-auto px-4 h-14 flex items-center justify-between">
-          <div className="flex items-center gap-2">
+          <button onClick={() => router.replace('/')} className="flex items-center gap-2 hover:opacity-80 transition-opacity">
             <Image src="/logo.png" alt="DM Institute 로고" width={32} height={32} priority />
-            <h1 className="text-lg font-bold tracking-tight text-neutral-900">디엠 학원</h1>
-          </div>
+            <h1 className="text-lg font-bold tracking-tight text-neutral-900">디엠학원</h1>
+          </button>
           <div className="flex items-center gap-1">
             {currentUser?.role === 'admin' && (
               <button
