@@ -16,12 +16,12 @@ export default function Home() {
   const [posts, setPosts] = useState<Post[]>([])
 
   useEffect(() => {
-    if (!localStorage.getItem('dm_logged_in')) {
+    const user = getCurrentUser()
+    if (!user) {
+      localStorage.removeItem('dm_logged_in')
       router.replace('/login')
       return
     }
-
-    const user = getCurrentUser()
     setCurrentUser(user)
 
     // Initialize dm_posts from mockPosts if not set yet
