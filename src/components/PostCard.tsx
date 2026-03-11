@@ -6,6 +6,7 @@ import { Post, Comment } from '@/types'
 import { AppUser } from '@/lib/auth'
 import { fetchComments, createComment, deleteComment } from '@/lib/db'
 import Image from 'next/image'
+import Avatar from '@/components/Avatar'
 
 interface PostCardProps {
   post: Post
@@ -89,9 +90,7 @@ export default function PostCard({ post, currentUser, onDelete }: PostCardProps)
     <article className="bg-white border border-neutral-200 rounded-2xl overflow-hidden">
       {/* 작성자 */}
       <div className="flex items-center gap-3 px-4 py-3">
-        <div className="w-9 h-9 rounded-full bg-gradient-to-br from-indigo-400 to-purple-500 flex items-center justify-center text-white text-sm font-semibold flex-shrink-0">
-          {avatarChar}
-        </div>
+        <Avatar userId={post.author_id} name={post.author_name} size="md" />
         <div className="flex-1 min-w-0">
           <p className="text-sm font-semibold text-neutral-900 truncate">{post.author_name}</p>
           <p className="text-xs text-neutral-400">{formatKoreanRelativeTime(post.created_at)}</p>
@@ -161,9 +160,7 @@ export default function PostCard({ post, currentUser, onDelete }: PostCardProps)
         <div className="px-4 pb-3 space-y-2 border-t border-neutral-100 pt-3">
           {comments.map((comment) => (
             <div key={comment.id} className="flex items-start gap-2">
-              <div className="w-7 h-7 rounded-full bg-gradient-to-br from-sky-400 to-emerald-400 flex items-center justify-center text-white text-xs font-semibold flex-shrink-0 mt-0.5">
-                {comment.author_name ? comment.author_name.charAt(0) : '?'}
-              </div>
+              <Avatar userId={comment.author_id} name={comment.author_name} size="sm" className="mt-0.5" />
               <div className="flex-1 min-w-0">
                 <p className="text-sm text-neutral-800">
                   <span className="font-semibold mr-1.5">{comment.author_name}</span>
@@ -188,9 +185,7 @@ export default function PostCard({ post, currentUser, onDelete }: PostCardProps)
       {/* 댓글 입력창 */}
       <div className="border-t border-neutral-100 px-4 py-3">
         <form onSubmit={handleComment} className="flex items-center gap-2">
-          <div className="w-7 h-7 rounded-full bg-gradient-to-br from-indigo-400 to-purple-500 flex items-center justify-center text-white text-xs font-semibold flex-shrink-0">
-            {currentUserDisplay ? currentUserDisplay.charAt(0) : '?'}
-          </div>
+          <Avatar userId={currentUser?.id} name={currentUserDisplay || '?'} size="sm" />
           <input
             ref={inputRef}
             type="text"

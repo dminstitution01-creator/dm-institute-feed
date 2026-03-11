@@ -61,6 +61,16 @@ export async function updateProfile(nickname: string): Promise<void> {
   }
 }
 
+export async function updateAvatar(file: File, userId: string): Promise<string> {
+  const ext = file.name.split('.').pop()
+  const path = `avatars/${userId}.${ext}`
+  const { error } = await supabase.storage
+    .from('post-images')
+    .upload(path, file, { upsert: true })
+  if (error) throw new Error(error.message)
+  return `${process.env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/public/post-images/${path}`
+}
+
 export async function updatePassword(newPassword: string): Promise<void> {
   const { error } = await supabase.auth.updateUser({ password: newPassword })
   if (error) throw new Error(error.message)

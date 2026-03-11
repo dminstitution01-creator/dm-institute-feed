@@ -1,14 +1,18 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { useRouter } from 'next/navigation'
-import { ArrowLeft } from 'lucide-react'
-import { getCurrentUser, updateProfile, updatePassword, AppUser } from '@/lib/auth'
+import { ArrowLeft, Camera } from 'lucide-react'
+import { getCurrentUser, updateProfile, updatePassword, updateAvatar, AppUser } from '@/lib/auth'
+import Avatar from '@/components/Avatar'
 
 export default function ProfilePage() {
   const router = useRouter()
   const [user, setUser] = useState<AppUser | null>(null)
   const [ready, setReady] = useState(false)
+  const [avatarKey, setAvatarKey] = useState(0)
+  const [avatarLoading, setAvatarLoading] = useState(false)
+  const fileRef = useRef<HTMLInputElement>(null)
 
   // Nickname change state
   const [newNickname, setNewNickname] = useState('')
@@ -35,6 +39,21 @@ export default function ProfilePage() {
   }, [router])
 
   if (!ready || !user) return null
+
+  async function handleAvatarChange(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0]
+    if (!file || !user) return
+    setAvatarLoading(true)
+    try {
+      await updateAvatar(file, user.id)
+      setAvatarKey((k) => k + 1)
+    } catch (err) {
+      alert(err instanceof Error ? err.message : '업로드 실패')
+    } finally {
+      setAvatarLoading(false)
+      if (fileRef.current) fileRef.current.value = ''
+    }
+  }
 
   async function handleNicknameChange(e: React.FormEvent) {
     e.preventDefault()
@@ -103,10 +122,22 @@ export default function ProfilePage() {
       </header>
 
       <main className="max-w-[320px] mx-auto px-4 py-8 space-y-8">
-        {/* 현재 닉네임 표시 */}
+        {/* 프로필 사진 + 닉네임 */}
         <div className="flex flex-col items-center gap-3">
-          <div className="w-16 h-16 rounded-full bg-gradient-to-br from-indigo-400 to-purple-500 flex items-center justify-center text-white text-2xl font-semibold">
-            {user.nickname ? user.nickname.charAt(0) : user.name.charAt(0)}
+          <div className="relative">
+            <Avatar key={avatarKey} userId={user.id} name={user.nickname || user.name} size="lg" />
+            <button
+              onClick={() => fileRef.current?.click()}
+              disabled={avatarLoading}
+              className="absolute bottom-0 right-0 w-7 h-7 bg-indigo-600 rounded-full flex items-center justify-center text-white hover:bg-indigo-700 transition-colors shadow"
+              aria-label="프로필 사진 변경"
+            >
+              {avatarLoading
+                ? <div className="w-3 h-3 border border-white border-t-transparent rounded-full animate-spin" />
+                : <Camera size={14} />
+              }
+            </button>
+            <input ref={fileRef} type="file" accept="image/*" className="hidden" onChange={handleAvatarChange} />
           </div>
           <div className="text-center">
             <p className="text-base font-semibold text-neutral-900">{user.nickname}</p>

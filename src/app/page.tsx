@@ -8,6 +8,7 @@ import { fetchPosts, deletePost } from '@/lib/db'
 import { Post } from '@/types'
 import { PenSquare, Settings, LogOut } from 'lucide-react'
 import Image from 'next/image'
+import Avatar from '@/components/Avatar'
 
 export default function Home() {
   const router = useRouter()
@@ -86,9 +87,7 @@ export default function Home() {
               className="flex items-center gap-1.5 px-2 h-9 rounded-full hover:bg-neutral-100 transition-colors"
               aria-label="내 프로필"
             >
-              <div className="w-7 h-7 rounded-full bg-gradient-to-br from-indigo-400 to-purple-500 flex items-center justify-center text-white text-xs font-semibold">
-                {avatarChar}
-              </div>
+              <Avatar userId={currentUser?.id} name={displayName} size="sm" />
               <span className="text-xs font-medium text-neutral-600 max-w-[60px] truncate">{displayName}</span>
             </button>
             <button
