@@ -38,7 +38,7 @@ export default function LoginPage() {
           className="mx-auto mb-5"
           priority
         />
-        <h1 className="text-xl font-semibold text-neutral-900 tracking-tight">디엠 학원</h1>
+        <h1 className="text-xl font-semibold text-neutral-900 tracking-tight">디엠학원</h1>
       </div>
 
       {/* 폼 */}
