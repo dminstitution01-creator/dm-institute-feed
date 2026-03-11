@@ -7,7 +7,7 @@ import { login } from '@/lib/auth'
 
 export default function LoginPage() {
   const router = useRouter()
-  const [email, setEmail] = useState('')
+  const [username, setUsername] = useState('')
   const [password, setPassword] = useState('')
   const [error, setError] = useState(false)
   const [loading, setLoading] = useState(false)
@@ -17,7 +17,7 @@ export default function LoginPage() {
     setLoading(true)
     setError(false)
     try {
-      await login(email, password)
+      await login(username, password)
       router.push('/')
     } catch {
       setError(true)
@@ -44,12 +44,12 @@ export default function LoginPage() {
       {/* 폼 */}
       <form onSubmit={handleSubmit} className="w-full max-w-[320px] space-y-3">
         <input
-          type="email"
-          placeholder="이메일"
-          value={email}
-          onChange={(e) => { setEmail(e.target.value); setError(false) }}
+          type="text"
+          placeholder="아이디"
+          value={username}
+          onChange={(e) => { setUsername(e.target.value); setError(false) }}
           className="w-full h-12 rounded-xl bg-neutral-100 px-4 text-sm text-neutral-900 placeholder:text-neutral-400 outline-none focus:ring-2 focus:ring-neutral-900 transition"
-          autoComplete="email"
+          autoComplete="username"
         />
         <input
           type="password"
@@ -62,7 +62,7 @@ export default function LoginPage() {
 
         {error && (
           <p className="text-xs text-red-500 text-center pt-1">
-            이메일 또는 비밀번호가 올바르지 않습니다.
+            아이디 또는 비밀번호가 올바르지 않습니다.
           </p>
         )}
 

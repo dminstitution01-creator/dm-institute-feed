@@ -2,20 +2,34 @@ import { supabase } from './supabase'
 
 export interface AppUser {
   id: string
-  name: string
-  role: 'admin' | 'student'
   email: string
+  name: string
+  username: string
+  nickname: string
+  role: 'admin' | 'student'
 }
 
-export async function login(email: string, password: string): Promise<AppUser> {
+export async function login(username: string, password: string): Promise<AppUser> {
+  // If username contains '@', use as-is (admin with real email)
+  // Otherwise convert to {username}@dm.local
+  const email = username.includes('@') ? username : `${username}@dm.local`
+
   const { data, error } = await supabase.auth.signInWithPassword({ email, password })
   if (error) throw new Error(error.message)
   const user = data.user
+
+  // Determine username and nickname for admin
+  const isAdmin = user.user_metadata?.role === 'admin' || user.email === 'dminstitution01@gmail.com'
+  const derivedUsername = user.user_metadata?.username ?? (isAdmin ? 'admin' : (user.email?.replace('@dm.local', '') ?? ''))
+  const derivedNickname = user.user_metadata?.nickname ?? (isAdmin ? '관리자' : (user.user_metadata?.name ?? derivedUsername))
+
   const appUser: AppUser = {
     id: user.id,
     email: user.email!,
     name: user.user_metadata?.name ?? user.email!,
-    role: user.user_metadata?.role ?? 'student',
+    username: derivedUsername,
+    nickname: derivedNickname,
+    role: isAdmin ? 'admin' : (user.user_metadata?.role ?? 'student'),
   }
   localStorage.setItem('dm_current_user', JSON.stringify(appUser))
   localStorage.setItem('dm_logged_in', 'true')
@@ -33,6 +47,23 @@ export function getCurrentUser(): AppUser | null {
     const raw = localStorage.getItem('dm_current_user')
     return raw ? JSON.parse(raw) : null
   } catch { return null }
+}
+
+export async function updateProfile(nickname: string): Promise<void> {
+  const { error } = await supabase.auth.updateUser({ data: { nickname } })
+  if (error) throw new Error(error.message)
+
+  // Update localStorage cache
+  const current = getCurrentUser()
+  if (current) {
+    const updated: AppUser = { ...current, nickname }
+    localStorage.setItem('dm_current_user', JSON.stringify(updated))
+  }
+}
+
+export async function updatePassword(newPassword: string): Promise<void> {
+  const { error } = await supabase.auth.updateUser({ password: newPassword })
+  if (error) throw new Error(error.message)
 }
 
 // Called from API route only (server-side)

@@ -14,6 +14,8 @@ export async function GET() {
     id: u.id,
     email: u.email,
     name: u.user_metadata?.name ?? u.email,
+    username: u.user_metadata?.username ?? u.email?.replace('@dm.local', '') ?? '',
+    nickname: u.user_metadata?.nickname ?? u.user_metadata?.name ?? '',
     role: u.user_metadata?.role ?? 'student',
   }))
   return NextResponse.json({ users })

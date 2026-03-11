@@ -41,7 +41,7 @@ export default function PostCard({ post, currentUser, onDelete }: PostCardProps)
   }, [post.id])
 
   const canDelete =
-    currentUser?.role === 'admin' || currentUser?.name === '하가원'
+    currentUser?.role === 'admin' || currentUser?.id === post.author_id
 
   function handleLike() {
     setLiked((prev) => !prev)
@@ -57,7 +57,7 @@ export default function PostCard({ post, currentUser, onDelete }: PostCardProps)
       const newComment = await createComment({
         post_id: post.id,
         author_id: currentUser.id,
-        author_name: currentUser.name,
+        author_name: currentUser.nickname,
         text,
       })
       setComments((prev) => [...prev, newComment])
@@ -83,6 +83,7 @@ export default function PostCard({ post, currentUser, onDelete }: PostCardProps)
   }
 
   const avatarChar = post.author_name ? post.author_name.charAt(0) : '?'
+  const currentUserDisplay = currentUser?.nickname ?? currentUser?.name ?? ''
 
   return (
     <article className="bg-white border border-neutral-200 rounded-2xl overflow-hidden">
@@ -188,7 +189,7 @@ export default function PostCard({ post, currentUser, onDelete }: PostCardProps)
       <div className="border-t border-neutral-100 px-4 py-3">
         <form onSubmit={handleComment} className="flex items-center gap-2">
           <div className="w-7 h-7 rounded-full bg-gradient-to-br from-indigo-400 to-purple-500 flex items-center justify-center text-white text-xs font-semibold flex-shrink-0">
-            {currentUser ? currentUser.name.charAt(0) : '?'}
+            {currentUserDisplay ? currentUserDisplay.charAt(0) : '?'}
           </div>
           <input
             ref={inputRef}

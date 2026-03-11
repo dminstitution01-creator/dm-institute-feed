@@ -22,8 +22,9 @@ export default function WritePage() {
   useEffect(() => {
     const user = getCurrentUser()
     if (!user) { router.replace('/login'); return }
-    setAuthorName(user.name)
-    setAuthorAvatar(user.name.charAt(0))
+    const displayName = user.nickname || user.name
+    setAuthorName(displayName)
+    setAuthorAvatar(displayName.charAt(0))
     setUserId(user.id)
   }, [router])
 

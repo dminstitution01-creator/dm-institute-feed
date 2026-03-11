@@ -9,6 +9,8 @@ interface ListedUser {
   id: string
   email: string
   name: string
+  username: string
+  nickname: string
   role: string
 }
 
@@ -17,7 +19,8 @@ export default function AdminPage() {
   const [isAdmin, setIsAdmin] = useState<boolean | null>(null)
   const [users, setUsers] = useState<ListedUser[]>([])
   const [name, setName] = useState('')
-  const [email, setEmail] = useState('')
+  const [username, setUsername] = useState('')
+  const [nickname, setNickname] = useState('')
   const [password, setPassword] = useState('')
   const [successMsg, setSuccessMsg] = useState('')
   const [errorMsg, setErrorMsg] = useState('')
@@ -57,14 +60,22 @@ export default function AdminPage() {
     )
   }
 
+  function clearForm() {
+    setName('')
+    setUsername('')
+    setNickname('')
+    setPassword('')
+  }
+
   async function handleCreate(e: React.FormEvent) {
     e.preventDefault()
     setSuccessMsg('')
     setErrorMsg('')
     const trimmedName = name.trim()
-    const trimmedEmail = email.trim()
+    const trimmedUsername = username.trim()
+    const trimmedNickname = nickname.trim()
     const trimmedPassword = password.trim()
-    if (!trimmedName || !trimmedEmail || !trimmedPassword) {
+    if (!trimmedName || !trimmedUsername || !trimmedNickname || !trimmedPassword) {
       setErrorMsg('모든 항목을 입력해 주세요.')
       return
     }
@@ -73,16 +84,20 @@ export default function AdminPage() {
       const res = await fetch('/api/create-user', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email: trimmedEmail, password: trimmedPassword, name: trimmedName }),
+        body: JSON.stringify({
+          email: `${trimmedUsername}@dm.local`,
+          password: trimmedPassword,
+          name: trimmedName,
+          username: trimmedUsername,
+          nickname: trimmedNickname,
+        }),
       })
       const data = await res.json()
       if (!res.ok) {
         setErrorMsg(data.error ?? '계정 생성에 실패했습니다.')
       } else {
         setSuccessMsg(`${trimmedName} 계정이 생성되었습니다.`)
-        setName('')
-        setEmail('')
-        setPassword('')
+        clearForm()
         await fetchUsers()
       }
     } catch {
@@ -133,10 +148,18 @@ export default function AdminPage() {
               className="w-full h-11 rounded-xl bg-neutral-100 px-4 text-sm text-neutral-900 placeholder:text-neutral-400 outline-none focus:ring-2 focus:ring-indigo-500 transition"
             />
             <input
-              type="email"
-              placeholder="이메일"
-              value={email}
-              onChange={(e) => { setEmail(e.target.value); setSuccessMsg(''); setErrorMsg('') }}
+              type="text"
+              placeholder="아이디"
+              value={username}
+              onChange={(e) => { setUsername(e.target.value); setSuccessMsg(''); setErrorMsg('') }}
+              className="w-full h-11 rounded-xl bg-neutral-100 px-4 text-sm text-neutral-900 placeholder:text-neutral-400 outline-none focus:ring-2 focus:ring-indigo-500 transition"
+              autoComplete="off"
+            />
+            <input
+              type="text"
+              placeholder="닉네임"
+              value={nickname}
+              onChange={(e) => { setNickname(e.target.value); setSuccessMsg(''); setErrorMsg('') }}
               className="w-full h-11 rounded-xl bg-neutral-100 px-4 text-sm text-neutral-900 placeholder:text-neutral-400 outline-none focus:ring-2 focus:ring-indigo-500 transition"
               autoComplete="off"
             />
@@ -180,7 +203,8 @@ export default function AdminPage() {
                 >
                   <div>
                     <p className="text-sm font-medium text-neutral-900">{u.name}</p>
-                    <p className="text-xs text-neutral-400">{u.email}</p>
+                    <p className="text-xs text-neutral-500">아이디: {u.username}</p>
+                    <p className="text-xs text-neutral-400">닉네임: {u.nickname}</p>
                   </div>
                   <button
                     onClick={() => handleDelete(u.id)}

@@ -50,6 +50,9 @@ export default function Home() {
 
   if (!ready) return null
 
+  const displayName = currentUser?.nickname || currentUser?.name || ''
+  const avatarChar = displayName ? displayName.charAt(0) : '?'
+
   return (
     <div className="min-h-screen bg-neutral-50">
       {/* 헤더 */}
@@ -76,6 +79,17 @@ export default function Home() {
               aria-label="새 게시물"
             >
               <PenSquare size={20} />
+            </button>
+            {/* 프로필 버튼 */}
+            <button
+              onClick={() => router.push('/profile')}
+              className="flex items-center gap-1.5 px-2 h-9 rounded-full hover:bg-neutral-100 transition-colors"
+              aria-label="내 프로필"
+            >
+              <div className="w-7 h-7 rounded-full bg-gradient-to-br from-indigo-400 to-purple-500 flex items-center justify-center text-white text-xs font-semibold">
+                {avatarChar}
+              </div>
+              <span className="text-xs font-medium text-neutral-600 max-w-[60px] truncate">{displayName}</span>
             </button>
             <button
               onClick={handleLogout}
