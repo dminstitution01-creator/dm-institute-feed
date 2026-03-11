@@ -15,6 +15,7 @@ export default function Home() {
   const [currentUser, setCurrentUser] = useState<AppUser | null>(null)
   const [posts, setPosts] = useState<Post[]>([])
   const [loading, setLoading] = useState(true)
+  const [fetchError, setFetchError] = useState<string | null>(null)
 
   useEffect(() => {
     const user = getCurrentUser()
@@ -28,7 +29,7 @@ export default function Home() {
 
     fetchPosts()
       .then((data) => setPosts(data))
-      .catch((err) => console.error('게시물 불러오기 실패:', err))
+      .catch((err) => setFetchError(err?.message ?? String(err)))
       .finally(() => setLoading(false))
   }, [router])
 
@@ -104,6 +105,9 @@ export default function Home() {
               />
             ))}
 
+            {fetchError && (
+              <p className="text-center text-sm text-red-400 py-4 bg-red-50 rounded-xl px-4">{fetchError}</p>
+            )}
             <p className="text-center text-sm text-neutral-400 py-8">
               모든 게시물을 확인했어요 🎉
             </p>
