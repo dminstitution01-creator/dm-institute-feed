@@ -65,6 +65,7 @@ export default function Home() {
               </button>
             )}
             <button
+              onClick={() => router.push('/write')}
               className="w-9 h-9 flex items-center justify-center rounded-full hover:bg-neutral-100 transition-colors text-neutral-700"
               aria-label="새 게시물"
             >
