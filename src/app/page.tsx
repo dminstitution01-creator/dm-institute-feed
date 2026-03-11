@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation'
 import PostCard from '@/components/PostCard'
 import { getCurrentUser, logout, AppUser } from '@/lib/auth'
 import { fetchPosts, deletePost } from '@/lib/db'
+import { supabase } from '@/lib/supabase'
 import { Post } from '@/types'
 import { PenSquare, Settings, LogOut } from 'lucide-react'
 import Image from 'next/image'
@@ -26,10 +27,12 @@ export default function Home() {
     setCurrentUser(user)
     setReady(true)
 
-    fetchPosts()
-      .then((data) => setPosts(data))
-      .catch((err) => console.error('게시물 불러오기 실패:', err))
-      .finally(() => setLoading(false))
+    supabase.auth.getSession().then(() => {
+      fetchPosts()
+        .then((data) => setPosts(data))
+        .catch((err) => console.error('게시물 불러오기 실패:', err))
+        .finally(() => setLoading(false))
+    })
   }, [router])
 
   async function handleDeletePost(postId: string) {
