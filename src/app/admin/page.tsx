@@ -3,30 +3,39 @@
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { ArrowLeft } from 'lucide-react'
-import { getCurrentUser, getUsers, createUser, deleteUser } from '@/lib/auth'
+import { getCurrentUser } from '@/lib/auth'
 
-interface StoredUser {
+interface ListedUser {
   id: string
-  password: string
+  email: string
   name: string
-  role: 'admin' | 'student'
+  role: string
 }
 
 export default function AdminPage() {
   const router = useRouter()
   const [isAdmin, setIsAdmin] = useState<boolean | null>(null)
-  const [users, setUsers] = useState<StoredUser[]>([])
+  const [users, setUsers] = useState<ListedUser[]>([])
   const [name, setName] = useState('')
-  const [id, setId] = useState('')
+  const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [successMsg, setSuccessMsg] = useState('')
   const [errorMsg, setErrorMsg] = useState('')
+  const [loading, setLoading] = useState(false)
+
+  async function fetchUsers() {
+    const res = await fetch('/api/list-users')
+    const data = await res.json()
+    if (data.users) {
+      setUsers(data.users.filter((u: ListedUser) => u.role !== 'admin'))
+    }
+  }
 
   useEffect(() => {
     const user = getCurrentUser()
     if (user?.role === 'admin') {
       setIsAdmin(true)
-      setUsers(getUsers())
+      fetchUsers()
     } else {
       setIsAdmin(false)
     }
@@ -48,36 +57,51 @@ export default function AdminPage() {
     )
   }
 
-  function handleCreate(e: React.FormEvent) {
+  async function handleCreate(e: React.FormEvent) {
     e.preventDefault()
     setSuccessMsg('')
     setErrorMsg('')
     const trimmedName = name.trim()
-    const trimmedId = id.trim()
+    const trimmedEmail = email.trim()
     const trimmedPassword = password.trim()
-    if (!trimmedName || !trimmedId || !trimmedPassword) {
+    if (!trimmedName || !trimmedEmail || !trimmedPassword) {
       setErrorMsg('모든 항목을 입력해 주세요.')
       return
     }
+    setLoading(true)
     try {
-      createUser(trimmedId, trimmedPassword, trimmedName)
-      setUsers(getUsers())
-      setSuccessMsg(`${trimmedName} 계정이 생성되었습니다.`)
-      setName('')
-      setId('')
-      setPassword('')
-    } catch (err) {
-      if (err instanceof Error) {
-        setErrorMsg(err.message)
+      const res = await fetch('/api/create-user', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: trimmedEmail, password: trimmedPassword, name: trimmedName }),
+      })
+      const data = await res.json()
+      if (!res.ok) {
+        setErrorMsg(data.error ?? '계정 생성에 실패했습니다.')
       } else {
-        setErrorMsg('계정 생성에 실패했습니다.')
+        setSuccessMsg(`${trimmedName} 계정이 생성되었습니다.`)
+        setName('')
+        setEmail('')
+        setPassword('')
+        await fetchUsers()
       }
+    } catch {
+      setErrorMsg('계정 생성에 실패했습니다.')
+    } finally {
+      setLoading(false)
     }
   }
 
-  function handleDelete(userId: string) {
-    deleteUser(userId)
-    setUsers(getUsers())
+  async function handleDelete(userId: string) {
+    if (!window.confirm('이 학생 계정을 삭제할까요?')) return
+    const res = await fetch('/api/delete-user', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ userId }),
+    })
+    if (res.ok) {
+      await fetchUsers()
+    }
   }
 
   return (
@@ -109,10 +133,10 @@ export default function AdminPage() {
               className="w-full h-11 rounded-xl bg-neutral-100 px-4 text-sm text-neutral-900 placeholder:text-neutral-400 outline-none focus:ring-2 focus:ring-indigo-500 transition"
             />
             <input
-              type="text"
-              placeholder="아이디"
-              value={id}
-              onChange={(e) => { setId(e.target.value); setSuccessMsg(''); setErrorMsg('') }}
+              type="email"
+              placeholder="이메일"
+              value={email}
+              onChange={(e) => { setEmail(e.target.value); setSuccessMsg(''); setErrorMsg('') }}
               className="w-full h-11 rounded-xl bg-neutral-100 px-4 text-sm text-neutral-900 placeholder:text-neutral-400 outline-none focus:ring-2 focus:ring-indigo-500 transition"
               autoComplete="off"
             />
@@ -134,9 +158,10 @@ export default function AdminPage() {
 
             <button
               type="submit"
-              className="w-full h-11 rounded-xl bg-indigo-600 text-white text-sm font-medium hover:bg-indigo-700 active:scale-[0.98] transition-all"
+              disabled={loading}
+              className="w-full h-11 rounded-xl bg-indigo-600 text-white text-sm font-medium hover:bg-indigo-700 active:scale-[0.98] transition-all disabled:opacity-60"
             >
-              계정 생성
+              {loading ? '생성 중...' : '계정 생성'}
             </button>
           </form>
         </div>
@@ -155,7 +180,7 @@ export default function AdminPage() {
                 >
                   <div>
                     <p className="text-sm font-medium text-neutral-900">{u.name}</p>
-                    <p className="text-xs text-neutral-400">{u.id}</p>
+                    <p className="text-xs text-neutral-400">{u.email}</p>
                   </div>
                   <button
                     onClick={() => handleDelete(u.id)}

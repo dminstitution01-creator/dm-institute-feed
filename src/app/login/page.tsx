@@ -7,17 +7,22 @@ import { login } from '@/lib/auth'
 
 export default function LoginPage() {
   const router = useRouter()
-  const [id, setId] = useState('')
+  const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [error, setError] = useState(false)
+  const [loading, setLoading] = useState(false)
 
-  function handleSubmit(e: React.FormEvent) {
+  async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
+    setLoading(true)
+    setError(false)
     try {
-      login(id, password)
+      await login(email, password)
       router.push('/')
     } catch {
       setError(true)
+    } finally {
+      setLoading(false)
     }
   }
 
@@ -39,12 +44,12 @@ export default function LoginPage() {
       {/* 폼 */}
       <form onSubmit={handleSubmit} className="w-full max-w-[320px] space-y-3">
         <input
-          type="text"
-          placeholder="아이디"
-          value={id}
-          onChange={(e) => { setId(e.target.value); setError(false) }}
+          type="email"
+          placeholder="이메일"
+          value={email}
+          onChange={(e) => { setEmail(e.target.value); setError(false) }}
           className="w-full h-12 rounded-xl bg-neutral-100 px-4 text-sm text-neutral-900 placeholder:text-neutral-400 outline-none focus:ring-2 focus:ring-neutral-900 transition"
-          autoComplete="username"
+          autoComplete="email"
         />
         <input
           type="password"
@@ -57,15 +62,16 @@ export default function LoginPage() {
 
         {error && (
           <p className="text-xs text-red-500 text-center pt-1">
-            아이디 또는 비밀번호가 올바르지 않습니다.
+            이메일 또는 비밀번호가 올바르지 않습니다.
           </p>
         )}
 
         <button
           type="submit"
-          className="w-full h-12 rounded-xl bg-neutral-900 text-white text-sm font-medium hover:bg-neutral-700 active:scale-[0.98] transition-all mt-1"
+          disabled={loading}
+          className="w-full h-12 rounded-xl bg-neutral-900 text-white text-sm font-medium hover:bg-neutral-700 active:scale-[0.98] transition-all mt-1 disabled:opacity-60"
         >
-          로그인
+          {loading ? '로그인 중...' : '로그인'}
         </button>
       </form>
     </div>

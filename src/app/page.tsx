@@ -4,9 +4,9 @@ import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import PostCard from '@/components/PostCard'
 import { mockPosts } from '@/lib/mock-data'
-import { getCurrentUser, AppUser } from '@/lib/auth'
+import { getCurrentUser, logout, AppUser } from '@/lib/auth'
 import { Post } from '@/types'
-import { PenSquare, Settings } from 'lucide-react'
+import { PenSquare, Settings, LogOut } from 'lucide-react'
 import Image from 'next/image'
 
 export default function Home() {
@@ -42,6 +42,11 @@ export default function Home() {
     localStorage.setItem('dm_posts', JSON.stringify(updated))
   }
 
+  async function handleLogout() {
+    await logout()
+    router.replace('/login')
+  }
+
   if (!ready) return null
 
   return (
@@ -70,6 +75,13 @@ export default function Home() {
               aria-label="새 게시물"
             >
               <PenSquare size={20} />
+            </button>
+            <button
+              onClick={handleLogout}
+              className="w-9 h-9 flex items-center justify-center rounded-full hover:bg-neutral-100 transition-colors text-neutral-700"
+              aria-label="로그아웃"
+            >
+              <LogOut size={20} />
             </button>
           </div>
         </div>
