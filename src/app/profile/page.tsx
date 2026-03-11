@@ -69,6 +69,7 @@ export default function ProfilePage() {
       await updateProfile(trimmed)
       setUser((prev) => prev ? { ...prev, nickname: trimmed } : prev)
       setNicknameSuccess('닉네임이 변경되었습니다.')
+      setTimeout(() => router.push('/'), 800)
     } catch (err: unknown) {
       setNicknameError(err instanceof Error ? err.message : '닉네임 변경에 실패했습니다.')
     } finally {
@@ -98,6 +99,7 @@ export default function ProfilePage() {
       setNewPassword('')
       setConfirmPassword('')
       setPasswordSuccess('비밀번호가 변경되었습니다.')
+      setTimeout(() => router.push('/'), 800)
     } catch (err: unknown) {
       setPasswordError(err instanceof Error ? err.message : '비밀번호 변경에 실패했습니다.')
     } finally {

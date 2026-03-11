@@ -21,7 +21,7 @@ export async function login(username: string, password: string): Promise<AppUser
   // Determine username and nickname for admin
   const isAdmin = user.user_metadata?.role === 'admin' || user.email === 'dminstitution01@gmail.com'
   const derivedUsername = user.user_metadata?.username ?? (isAdmin ? 'admin' : (user.email?.replace('@dm.local', '') ?? ''))
-  const derivedNickname = user.user_metadata?.nickname ?? (isAdmin ? '관리자' : (user.user_metadata?.name ?? derivedUsername))
+  const derivedNickname = user.user_metadata?.nickname ?? (isAdmin ? '최강원장쌤' : (user.user_metadata?.name ?? derivedUsername))
 
   const appUser: AppUser = {
     id: user.id,
