@@ -13,6 +13,7 @@ export default function LoginPage() {
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
     if (id === 'student' && password === '1234') {
+      localStorage.setItem('dm_logged_in', 'true')
       router.push('/')
     } else {
       setError(true)

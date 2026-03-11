@@ -1,9 +1,26 @@
+'use client'
+
+import { useEffect, useState } from 'react'
+import { useRouter } from 'next/navigation'
 import PostCard from '@/components/PostCard'
 import { mockPosts } from '@/lib/mock-data'
 import { PenSquare } from 'lucide-react'
 import Image from 'next/image'
 
 export default function Home() {
+  const router = useRouter()
+  const [ready, setReady] = useState(false)
+
+  useEffect(() => {
+    if (!localStorage.getItem('dm_logged_in')) {
+      router.replace('/login')
+    } else {
+      setReady(true)
+    }
+  }, [router])
+
+  if (!ready) return null
+
   return (
     <div className="min-h-screen bg-neutral-50">
       {/* 헤더 */}
