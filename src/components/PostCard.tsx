@@ -1,19 +1,24 @@
 'use client'
 
 import { useState, useRef } from 'react'
-import { Heart, MessageCircle, Send } from 'lucide-react'
+import { Heart, MessageCircle, Send, Trash2 } from 'lucide-react'
 import { Post, Comment } from '@/types'
 
 interface PostCardProps {
   post: Post
+  currentUser: { id: string; name: string; role: string } | null
+  onDelete: (postId: string) => void
 }
 
-export default function PostCard({ post }: PostCardProps) {
+export default function PostCard({ post, currentUser, onDelete }: PostCardProps) {
   const [liked, setLiked] = useState(post.liked)
   const [likeCount, setLikeCount] = useState(post.likes)
   const [comments, setComments] = useState<Comment[]>(post.comments)
   const [commentText, setCommentText] = useState('')
   const inputRef = useRef<HTMLInputElement>(null)
+
+  const canDelete =
+    currentUser?.role === 'admin' || currentUser?.name === '하가원'
 
   function handleLike() {
     setLiked((prev) => !prev)
@@ -35,6 +40,12 @@ export default function PostCard({ post }: PostCardProps) {
     setCommentText('')
   }
 
+  function handleDelete() {
+    if (window.confirm('게시물을 삭제할까요?')) {
+      onDelete(post.id)
+    }
+  }
+
   return (
     <article className="bg-white border border-neutral-200 rounded-2xl overflow-hidden">
       {/* 작성자 */}
@@ -46,6 +57,15 @@ export default function PostCard({ post }: PostCardProps) {
           <p className="text-sm font-semibold text-neutral-900 truncate">{post.author}</p>
           <p className="text-xs text-neutral-400">{post.createdAt}</p>
         </div>
+        {canDelete && (
+          <button
+            onClick={handleDelete}
+            className="w-8 h-8 flex items-center justify-center rounded-full hover:bg-neutral-100 transition-colors text-neutral-400 hover:text-red-400 flex-shrink-0"
+            aria-label="게시물 삭제"
+          >
+            <Trash2 size={16} />
+          </button>
+        )}
       </div>
 
       {/* 사진 */}

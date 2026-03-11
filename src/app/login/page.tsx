@@ -3,6 +3,7 @@
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import Image from 'next/image'
+import { login } from '@/lib/auth'
 
 export default function LoginPage() {
   const router = useRouter()
@@ -12,10 +13,10 @@ export default function LoginPage() {
 
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
-    if (id === 'student' && password === '1234') {
-      localStorage.setItem('dm_logged_in', 'true')
+    try {
+      login(id, password)
       router.push('/')
-    } else {
+    } catch {
       setError(true)
     }
   }
