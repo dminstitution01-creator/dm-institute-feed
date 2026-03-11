@@ -13,8 +13,8 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "우리 학원",
-  description: "학원 전용 커뮤니티 피드",
+  title: "디엠 학원",
+  description: "디엠 학원 전용 커뮤니티",
 };
 
 export default function RootLayout({
