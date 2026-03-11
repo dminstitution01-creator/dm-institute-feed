@@ -3,8 +3,8 @@
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import PostCard from '@/components/PostCard'
-import { mockPosts } from '@/lib/mock-data'
 import { getCurrentUser, logout, AppUser } from '@/lib/auth'
+import { fetchPosts, deletePost } from '@/lib/db'
 import { Post } from '@/types'
 import { PenSquare, Settings, LogOut } from 'lucide-react'
 import Image from 'next/image'
@@ -14,6 +14,7 @@ export default function Home() {
   const [ready, setReady] = useState(false)
   const [currentUser, setCurrentUser] = useState<AppUser | null>(null)
   const [posts, setPosts] = useState<Post[]>([])
+  const [loading, setLoading] = useState(true)
 
   useEffect(() => {
     const user = getCurrentUser()
@@ -23,23 +24,22 @@ export default function Home() {
       return
     }
     setCurrentUser(user)
-
-    // Initialize dm_posts from mockPosts if not set yet
-    const stored = localStorage.getItem('dm_posts')
-    if (!stored) {
-      localStorage.setItem('dm_posts', JSON.stringify(mockPosts))
-      setPosts(mockPosts)
-    } else {
-      setPosts(JSON.parse(stored))
-    }
-
     setReady(true)
+
+    fetchPosts()
+      .then((data) => setPosts(data))
+      .catch((err) => console.error('게시물 불러오기 실패:', err))
+      .finally(() => setLoading(false))
   }, [router])
 
-  function handleDeletePost(postId: string) {
-    const updated = posts.filter((p) => p.id !== postId)
-    setPosts(updated)
-    localStorage.setItem('dm_posts', JSON.stringify(updated))
+  async function handleDeletePost(postId: string) {
+    try {
+      await deletePost(postId)
+      setPosts((prev) => prev.filter((p) => p.id !== postId))
+    } catch (err) {
+      console.error('게시물 삭제 실패:', err)
+      alert('게시물 삭제에 실패했습니다.')
+    }
   }
 
   async function handleLogout() {
@@ -89,18 +89,26 @@ export default function Home() {
 
       {/* 피드 */}
       <main className="max-w-[600px] mx-auto px-4 py-6 space-y-6">
-        {posts.map((post) => (
-          <PostCard
-            key={post.id}
-            post={post}
-            currentUser={currentUser}
-            onDelete={handleDeletePost}
-          />
-        ))}
+        {loading ? (
+          <div className="flex justify-center py-16">
+            <div className="w-8 h-8 border-2 border-indigo-500 border-t-transparent rounded-full animate-spin" />
+          </div>
+        ) : (
+          <>
+            {posts.map((post) => (
+              <PostCard
+                key={post.id}
+                post={post}
+                currentUser={currentUser}
+                onDelete={handleDeletePost}
+              />
+            ))}
 
-        <p className="text-center text-sm text-neutral-400 py-8">
-          모든 게시물을 확인했어요 🎉
-        </p>
+            <p className="text-center text-sm text-neutral-400 py-8">
+              모든 게시물을 확인했어요 🎉
+            </p>
+          </>
+        )}
       </main>
     </div>
   )

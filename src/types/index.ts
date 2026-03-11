@@ -1,19 +1,18 @@
 export interface Comment {
   id: string
-  author: string
-  avatar: string
+  post_id: string
+  author_id: string
+  author_name: string
   text: string
-  createdAt: string
+  created_at: string
 }
 
 export interface Post {
   id: string
-  author: string
-  avatar: string
-  imageUrl: string
+  author_id: string
+  author_name: string
   caption: string
+  image_url: string
   likes: number
-  liked: boolean
-  comments: Comment[]
-  createdAt: string
+  created_at: string
 }

@@ -1,21 +1,44 @@
 'use client'
 
-import { useState, useRef } from 'react'
+import { useState, useRef, useEffect } from 'react'
 import { Heart, MessageCircle, Send, Trash2 } from 'lucide-react'
 import { Post, Comment } from '@/types'
+import { AppUser } from '@/lib/auth'
+import { fetchComments, createComment, deleteComment } from '@/lib/db'
+import Image from 'next/image'
 
 interface PostCardProps {
   post: Post
-  currentUser: { id: string; name: string; role: string } | null
+  currentUser: AppUser | null
   onDelete: (postId: string) => void
 }
 
+function formatKoreanRelativeTime(dateStr: string): string {
+  const now = Date.now()
+  const then = new Date(dateStr).getTime()
+  const diffMs = now - then
+  const diffMin = Math.floor(diffMs / 60000)
+  const diffHour = Math.floor(diffMs / 3600000)
+  const diffDay = Math.floor(diffMs / 86400000)
+
+  if (diffMin < 1) return '방금'
+  if (diffMin < 60) return `${diffMin}분 전`
+  if (diffHour < 24) return `${diffHour}시간 전`
+  return `${diffDay}일 전`
+}
+
 export default function PostCard({ post, currentUser, onDelete }: PostCardProps) {
-  const [liked, setLiked] = useState(post.liked)
+  const [liked, setLiked] = useState(false)
   const [likeCount, setLikeCount] = useState(post.likes)
-  const [comments, setComments] = useState<Comment[]>(post.comments)
+  const [comments, setComments] = useState<Comment[]>([])
   const [commentText, setCommentText] = useState('')
   const inputRef = useRef<HTMLInputElement>(null)
+
+  useEffect(() => {
+    fetchComments(post.id)
+      .then(setComments)
+      .catch((err) => console.error('댓글 불러오기 실패:', err))
+  }, [post.id])
 
   const canDelete =
     currentUser?.role === 'admin' || currentUser?.name === '하가원'
@@ -25,19 +48,32 @@ export default function PostCard({ post, currentUser, onDelete }: PostCardProps)
     setLikeCount((prev) => (liked ? prev - 1 : prev + 1))
   }
 
-  function handleComment(e: React.FormEvent) {
+  async function handleComment(e: React.FormEvent) {
     e.preventDefault()
     const text = commentText.trim()
-    if (!text) return
-    const newComment: Comment = {
-      id: `c-${Date.now()}`,
-      author: '나',
-      avatar: '나',
-      text,
-      createdAt: '방금',
+    if (!text || !currentUser) return
+
+    try {
+      const newComment = await createComment({
+        post_id: post.id,
+        author_id: currentUser.id,
+        author_name: currentUser.name,
+        text,
+      })
+      setComments((prev) => [...prev, newComment])
+      setCommentText('')
+    } catch (err) {
+      console.error('댓글 작성 실패:', err)
     }
-    setComments((prev) => [...prev, newComment])
-    setCommentText('')
+  }
+
+  async function handleDeleteComment(commentId: string) {
+    try {
+      await deleteComment(commentId)
+      setComments((prev) => prev.filter((c) => c.id !== commentId))
+    } catch (err) {
+      console.error('댓글 삭제 실패:', err)
+    }
   }
 
   function handleDelete() {
@@ -46,16 +82,18 @@ export default function PostCard({ post, currentUser, onDelete }: PostCardProps)
     }
   }
 
+  const avatarChar = post.author_name ? post.author_name.charAt(0) : '?'
+
   return (
     <article className="bg-white border border-neutral-200 rounded-2xl overflow-hidden">
       {/* 작성자 */}
       <div className="flex items-center gap-3 px-4 py-3">
         <div className="w-9 h-9 rounded-full bg-gradient-to-br from-indigo-400 to-purple-500 flex items-center justify-center text-white text-sm font-semibold flex-shrink-0">
-          {post.avatar}
+          {avatarChar}
         </div>
         <div className="flex-1 min-w-0">
-          <p className="text-sm font-semibold text-neutral-900 truncate">{post.author}</p>
-          <p className="text-xs text-neutral-400">{post.createdAt}</p>
+          <p className="text-sm font-semibold text-neutral-900 truncate">{post.author_name}</p>
+          <p className="text-xs text-neutral-400">{formatKoreanRelativeTime(post.created_at)}</p>
         </div>
         {canDelete && (
           <button
@@ -69,14 +107,16 @@ export default function PostCard({ post, currentUser, onDelete }: PostCardProps)
       </div>
 
       {/* 사진 */}
-      <div className="aspect-square w-full overflow-hidden bg-neutral-100">
-        {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img
-          src={post.imageUrl}
-          alt={`${post.author}의 게시물`}
-          className="w-full h-full object-cover"
-        />
-      </div>
+      {post.image_url && (
+        <div className="aspect-square w-full overflow-hidden bg-neutral-100 relative">
+          <Image
+            src={post.image_url}
+            alt={`${post.author_name}의 게시물`}
+            fill
+            className="object-cover"
+          />
+        </div>
+      )}
 
       {/* 액션 버튼 */}
       <div className="flex items-center gap-4 px-4 pt-3 pb-1">
@@ -110,7 +150,7 @@ export default function PostCard({ post, currentUser, onDelete }: PostCardProps)
       {/* 본문 */}
       <div className="px-4 pb-3">
         <p className="text-sm text-neutral-800 leading-relaxed whitespace-pre-wrap">
-          <span className="font-semibold mr-1.5">{post.author}</span>
+          <span className="font-semibold mr-1.5">{post.author_name}</span>
           {post.caption}
         </p>
       </div>
@@ -121,15 +161,24 @@ export default function PostCard({ post, currentUser, onDelete }: PostCardProps)
           {comments.map((comment) => (
             <div key={comment.id} className="flex items-start gap-2">
               <div className="w-7 h-7 rounded-full bg-gradient-to-br from-sky-400 to-emerald-400 flex items-center justify-center text-white text-xs font-semibold flex-shrink-0 mt-0.5">
-                {comment.avatar}
+                {comment.author_name ? comment.author_name.charAt(0) : '?'}
               </div>
               <div className="flex-1 min-w-0">
                 <p className="text-sm text-neutral-800">
-                  <span className="font-semibold mr-1.5">{comment.author}</span>
+                  <span className="font-semibold mr-1.5">{comment.author_name}</span>
                   {comment.text}
                 </p>
-                <p className="text-xs text-neutral-400 mt-0.5">{comment.createdAt}</p>
+                <p className="text-xs text-neutral-400 mt-0.5">{formatKoreanRelativeTime(comment.created_at)}</p>
               </div>
+              {canDelete && (
+                <button
+                  onClick={() => handleDeleteComment(comment.id)}
+                  className="w-6 h-6 flex items-center justify-center rounded-full hover:bg-neutral-100 transition-colors text-neutral-300 hover:text-red-400 flex-shrink-0"
+                  aria-label="댓글 삭제"
+                >
+                  <Trash2 size={12} />
+                </button>
+              )}
             </div>
           ))}
         </div>
@@ -139,7 +188,7 @@ export default function PostCard({ post, currentUser, onDelete }: PostCardProps)
       <div className="border-t border-neutral-100 px-4 py-3">
         <form onSubmit={handleComment} className="flex items-center gap-2">
           <div className="w-7 h-7 rounded-full bg-gradient-to-br from-indigo-400 to-purple-500 flex items-center justify-center text-white text-xs font-semibold flex-shrink-0">
-            나
+            {currentUser ? currentUser.name.charAt(0) : '?'}
           </div>
           <input
             ref={inputRef}

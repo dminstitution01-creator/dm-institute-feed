@@ -3,7 +3,7 @@
 import { useState, useRef, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { getCurrentUser } from '@/lib/auth'
-import { Post } from '@/types'
+import { createPost, uploadImage } from '@/lib/db'
 import { ArrowLeft, ImagePlus, X } from 'lucide-react'
 import Image from 'next/image'
 
@@ -12,47 +12,62 @@ export default function WritePage() {
   const fileRef = useRef<HTMLInputElement>(null)
   const [caption, setCaption] = useState('')
   const [imagePreview, setImagePreview] = useState<string | null>(null)
+  const [imageFile, setImageFile] = useState<File | null>(null)
   const [authorName, setAuthorName] = useState('')
   const [authorAvatar, setAuthorAvatar] = useState('')
+  const [userId, setUserId] = useState('')
+  const [uploading, setUploading] = useState(false)
+  const [submitting, setSubmitting] = useState(false)
 
   useEffect(() => {
     const user = getCurrentUser()
     if (!user) { router.replace('/login'); return }
     setAuthorName(user.name)
     setAuthorAvatar(user.name.charAt(0))
+    setUserId(user.id)
   }, [router])
 
   function handleImage(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0]
     if (!file) return
+    setImageFile(file)
     const reader = new FileReader()
     reader.onload = () => setImagePreview(reader.result as string)
     reader.readAsDataURL(file)
   }
 
-  function handleSubmit(e: React.FormEvent) {
+  async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
-    if (!caption.trim() && !imagePreview) return
+    if (!caption.trim() && !imageFile) return
+    if (submitting) return
 
-    const newPost: Post = {
-      id: `post-${Date.now()}`,
-      author: authorName,
-      avatar: authorAvatar,
-      imageUrl: imagePreview ?? '',
-      caption: caption.trim(),
-      likes: 0,
-      liked: false,
-      comments: [],
-      createdAt: '방금',
+    try {
+      setSubmitting(true)
+      let image_url = ''
+
+      if (imageFile) {
+        setUploading(true)
+        image_url = await uploadImage(imageFile, userId)
+        setUploading(false)
+      }
+
+      await createPost({
+        author_id: userId,
+        author_name: authorName,
+        caption: caption.trim(),
+        image_url,
+      })
+
+      router.push('/')
+    } catch (err) {
+      console.error('게시물 작성 실패:', err)
+      alert('게시물 작성에 실패했습니다.')
+      setUploading(false)
+      setSubmitting(false)
     }
-
-    const stored = localStorage.getItem('dm_posts')
-    const posts: Post[] = stored ? JSON.parse(stored) : []
-    const updated = [newPost, ...posts]
-    localStorage.setItem('dm_posts', JSON.stringify(updated))
-
-    router.push('/')
   }
+
+  const isReady = caption.trim() || imageFile
 
   return (
     <div className="min-h-screen bg-white">
@@ -68,10 +83,10 @@ export default function WritePage() {
           <span className="text-sm font-semibold text-neutral-900">새 게시물</span>
           <button
             onClick={handleSubmit}
-            disabled={!caption.trim() && !imagePreview}
+            disabled={!isReady || submitting}
             className="text-sm font-semibold text-indigo-600 disabled:text-neutral-300 transition-colors"
           >
-            게시
+            {submitting ? '게시 중...' : '게시'}
           </button>
         </div>
       </header>
@@ -99,12 +114,23 @@ export default function WritePage() {
         {imagePreview && (
           <div className="relative aspect-square w-full rounded-2xl overflow-hidden bg-neutral-100">
             <Image src={imagePreview} alt="미리보기" fill className="object-cover" />
-            <button
-              onClick={() => { setImagePreview(null); if (fileRef.current) fileRef.current.value = '' }}
-              className="absolute top-2 right-2 w-7 h-7 bg-black/50 rounded-full flex items-center justify-center text-white hover:bg-black/70 transition-colors"
-            >
-              <X size={14} />
-            </button>
+            {uploading && (
+              <div className="absolute inset-0 bg-black/40 flex items-center justify-center">
+                <div className="w-8 h-8 border-2 border-white border-t-transparent rounded-full animate-spin" />
+              </div>
+            )}
+            {!uploading && (
+              <button
+                onClick={() => {
+                  setImagePreview(null)
+                  setImageFile(null)
+                  if (fileRef.current) fileRef.current.value = ''
+                }}
+                className="absolute top-2 right-2 w-7 h-7 bg-black/50 rounded-full flex items-center justify-center text-white hover:bg-black/70 transition-colors"
+              >
+                <X size={14} />
+              </button>
+            )}
           </div>
         )}
 
